@@ -23,4 +23,5 @@ return [
     Sonata\DoctrineORMAdminBundle\SonataDoctrineORMAdminBundle::class => ['all' => true],
     Sonata\UserBundle\SonataUserBundle::class => ['all' => true],
     FOS\RestBundle\FOSRestBundle::class => ['all' => true],
+    Symfony\UX\Turbo\TurboBundle::class => ['all' => true],
 ];

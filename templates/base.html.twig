@@ -12,6 +12,12 @@
         {% endblock %}
     </head>
     <body>
+        <turbo-frame id="the_frame_id" src="{{ path('submit_order') }}">
+            A placeholder.
+        </turbo-frame>
+
+        {% block message_stream %}
+        {% endblock %}
         {% block body %}
             <div id="content">
                 {% block content %}{% endblock %}

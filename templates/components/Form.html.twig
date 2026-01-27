@@ -1,4 +1,10 @@
 {# read and display all flash messages #}
+
+{# {% block  %} #}
+<twig:Turbo:Frame id="the_frame_id" action='append'>
+    <a href="{{ path('app_order') }}">Home</a>
+</twig:Turbo:Frame>
+
 {% for label, messages in app.flashes %}
     {% for message in messages %}
         <div class="flash-{{ label }}">
@@ -7,4 +13,6 @@
     {% endfor %}
 {% endfor %}
 <br>
-{{ form(form) }}
+<turbo-frame  id="form" src="path('app_order')">
+    {{ form(form) }}
+</turbo-frame>

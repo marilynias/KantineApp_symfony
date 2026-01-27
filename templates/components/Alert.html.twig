@@ -1,5 +1,5 @@
 {%if message%}
-<link rel="stylesheet" href="{{asset('styles/popUp.css')}}" />
+{# <link rel="stylesheet" href="{{asset('styles/popUp.css')}}" />
 <div class="popup-overlay alert alert-{{ type }}">
     <div class="popup-box">
         <p id="popup-message">{{ message|trans }}</p>
@@ -8,5 +8,12 @@
         </div>
     </div>
     
-</div>
+</div> #}
+{% block message_stream %}
+<twig:Turbo:Stream:Append target="#the_frame_id">
+    Content to append to container designated with the dom_id.
+</twig:Turbo:Stream:Append>
+{% endblock %}
+
+
 {%endif%}

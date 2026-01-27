@@ -12,7 +12,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class OrderDTOType extends AbstractType
 {
-    private $items = [
+    public static $items = [
         "3,00€" => 3.00,
         "3,50€" => 3.50,
         "4,50€" => 4.50,
@@ -28,11 +28,14 @@ class OrderDTOType extends AbstractType
     {
         $builder
             ->add('Costumer', null, ["required" => true])
-            ->add('ordered_item', ChoiceType::class, ["choices" => $this->items, "expanded" => true, "required" => true])
+            ->add('ordered_item', ChoiceType::class, ["choices" => $this::$items, "expanded" => true, "required" => true])
             ->add('tax', HiddenType::class, ['data' => 7, "required" => true])
-            ->add('save', SubmitType::class)
-            ->add('update', SubmitType::class, ['attr' => ['class' => 'btn button']])
-            ->add('cancel', SubmitType::class, ['attr' => ['class' => 'btn button']])
+            ->add('save', SubmitType::class, ['label' => 'OK',
+                'attr' => [
+                    'value' => 'save-order'
+                ]])
+            ->add('update', SubmitType::class, ['attr' => ['class' => 'btn button', 'value' => 'update-order']])
+            ->add('cancel', SubmitType::class, ['attr' => ['class' => 'btn button', 'value' => 'cancel-order']])
         ;
     }
 

@@ -7,22 +7,55 @@
 
 {% block javascripts %}
     <script src="{{asset('scripts/order_form.js')}}"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@latest/dist/turbo.es2017-esm.min.js"></script>
 {% endblock %}
 
 {% block title %} Kantine {% endblock %}
 
 {% block content %}
+    {# <turbo-frame id="the_frame_id">
+        <a href="{{ path('app_order') }}">This block is scoped, the rest of the page will not change if you click here!</a>
+    </turbo-frame> #}
     {# we only want to show one message, dont add more then one flashes #}
-    {% for label, messages in app.flashes|slice(0,1) %}
-        {% for message in messages %}
-            <twig:Alert type="{{label}}" message="{{message|trans}}" /> 
-        {% endfor %}
+    {% for label, messages in app.flashes %}
+        {{messages|join}}
     {% endfor %}
+    {# {% block message_stream %}
+    <twig:Turbo:Frame id="message_stream" src="{{ path('submit_order') }}">
+        {% for label, messages in app.flashes|slice(0,1) %}
+            {% for message in messages %}
+                <twig:Turbo:Stream:Replace target="#messages">
+                    Content to prepend to container designated with the dom_id.
+                </twig:Turbo:Stream:Replace>
+                <twig:Alert type="{{label}}" message="{{message|trans}}" /> 
 
+
+
+                <turbo-stream action="Append" targets="#messages">
+                    <template>
+                        The element having the id "my_div_id" will be replaced by this block, without a full page reload!
+                        <twig:Alert type="{{label}}" message="{{message|trans}}" /> 
+                        <div>The task "test" has been created!</div>
+                    </template>
+                </turbo-stream>
+
+                
+            {% endfor %}
+        {% endfor %}
+    </twig:Turbo:Frame>
+    {% endblock %} #}
+
+    <twig:Turbo:Frame id="form" src="{{path('app_order')}}">
     {# 
         TODO: manually writing out how the form should be displayed should probably be done via form_themes:
         https://symfony.com/doc/current/form/form_themes.html#create-your-own-form-theme
     #}
+    {# <turbo-frame  id="form" src="path('app_order')"> #}
+    {# <twig:Turbo:Stream:Replace target="#message_stream">
+        appended
+    </twig:Turbo:Stream:Replace> #}
+
+
     {{ form_start(form) }}
         
         <div class="my-custom-class-for-errors">
@@ -75,11 +108,11 @@
             <label class="btn submit">
                 <!-- Submit Button -->
                 OK
-                {{ form_widget(form.save, {'attr': {'style':"display: none"}}) }}
+                {{ form_widget(form.save,  {'attr': {'style':"display: none"}}) }}
             </label>
 
             {# if the user already ordered, display the update and cancel buttons, else just say that they are rendered, so symphony doesnt automatically render it #}
-            {%if override_form%}
+            {% if override_form %}
                 <link rel="stylesheet" href="{{asset('styles/popUp.css')}}" />
                 <div class="popup-overlay alert">
                     <div class="popup-box">
@@ -91,12 +124,13 @@
                     </div>
                     
                 </div>
-            {%else%}
+            {% else %}
                 {% do form.update.setRendered %}
                 {% do form.cancel.setRendered %}
-            {%endif%}
+            {% endif %}
         </div>
 
     {{ form_end(form) }}
 
+    </twig:Turbo:Frame>
 {% endblock %}
