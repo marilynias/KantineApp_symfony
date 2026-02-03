@@ -1,18 +1,65 @@
-{# read and display all flash messages #}
+{# {{ form(form) }} #}
+{{form | join}}
+{{ form_start(form, { attr: stimulus_controller('order').toArray() }) }}
+        
+    <div class="my-custom-class-for-errors">
+        {{ form_errors(form) }}
+    </div>
+    <label class="Costumer-label"> 
+        {{ form.Costumer.vars.label }}
+        {{ form_widget(form.Costumer, {'attr': {'autofocus': true, class: 'costumer-input'}+stimulus_target('order', 'costumerInputTarget').toArray()}) }}
+    </label>
 
-{# {% block  %} #}
-<twig:Turbo:Frame id="the_frame_id" action='append'>
-    <a href="{{ path('app_order') }}">Home</a>
-</twig:Turbo:Frame>
 
-{% for label, messages in app.flashes %}
-    {% for message in messages %}
-        <div class="flash-{{ label }}">
-            {{ message|trans|raw }}
-        </div>
+    <div id="menus" class="menus">
+    {% for choice in form.ordered_item.vars.choices %}
+        {% if loop.index%2 == 0 %}{% endif %}
+        
+        <label class="menulabel btn" for="{{ form.ordered_item.vars.name }}_{{ choice.value }}">
+            {{ choice.label|trans }}
+            <input 
+                class="input_invis" 
+                type="radio" 
+                id="{{ form.ordered_item.vars.name }}_{{ choice.value }}" 
+                name="order_dto[{{ form.ordered_item.vars.name }}]" 
+                value="{{ choice.value }}"
+                {# surely there is a better way to check wether this is selected #}
+                checked="{{ form.tax.vars.value == choice.value }}"
+                
+                />
+        </label>
+        {% do form.ordered_item.setRendered() %}
+        
     {% endfor %}
-{% endfor %}
-<br>
-<turbo-frame  id="form" src="path('app_order')">
-    {{ form(form) }}
-</turbo-frame>
+    </div>
+    
+    
+    <div class="footer">
+    {{ form_widget(form.tax, {'attr': {'checked':'', 'type':'hidden'}}) }}
+
+        <label class="btn submit">
+            <!-- Submit Button -->
+            OK
+            {{ form_widget(form.save,  {'attr': {'style':"display: none"}}) }}
+        </label>
+
+        {# if the user already ordered, display the update and cancel buttons, else just say that they are rendered, so symphony doesnt automatically render it #}
+        {% if override_form %}
+            <link rel="stylesheet" href="{{asset('styles/popUp.css')}}" />
+            <div class="popup-overlay alert">
+                <div class="popup-box">
+                    <p id="popup-message">{{"User already ordered, update order?"|trans}}</p>
+                    <div class="popup-buttons">
+                            {{ form_widget(form.update) }}
+                            {{ form_widget(form.cancel) }}
+                    </div>
+                </div>
+                
+            </div>
+        {% else %}
+            {% do form.update.setRendered %}
+            {% do form.cancel.setRendered %}
+        {% endif %}
+    </div>
+
+{{ form_end(form) }}

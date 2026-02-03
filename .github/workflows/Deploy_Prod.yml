@@ -49,11 +49,14 @@ jobs:
             # install dependencies
             composer install --no-dev --optimize-autoloader
 
-            # compile assets
-            php bin/console asset-map:compile
-
             # some optimizations
             composer dump-autoload --no-dev --classmap-authoritative
+
+            # recreate cache
+            php bin/console cache:clear --no-interaction --env=prod --no-debug
+            
+            # compile assets
+            php bin/console asset-map:compile
 
       - name: Use captured output
         run: echo "SSH output was ${{ steps.ssh.outputs.stdout }}"

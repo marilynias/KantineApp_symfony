@@ -60,91 +60,14 @@ final class OrderController extends AbstractFOSRestController
         $order = new Order();
         $now = new DateTime();
         $order->setOrderDateTime($now);
-        // $order->setOrderDate($now);
         $order->setCostumer($this->get_Costumer((int)$orderDTO->getCostumer()));
         $order->setOrderedItem($orderDTO->getOrderedItem());
         $order->setTax($orderDTO->getTax());
         return $order;
     }
 
-    #[Route(path: '/submit', name: 'submit_order', methods:['GET','POST'])]
-    public function submitOrder(Request $request, Stopwatch $stopwatch): Response
-    {
-        $stopwatch->start('init');
-        $orderDTO = new OrderFormDTO();
-        $form = $this->createForm(OrderDTOType::class, $orderDTO, [
-            // 'action' => $this->generateUrl('submit_order'),
-        ]);
-        $emptyForm = clone $form;
-
-        $options = ['form' =>$form,  'override_form' => null];
-        $stopwatch->stop('init');
-        $stopwatch->start('handle_request');
-        $form->handleRequest($request);
-        $stopwatch->stop('handle_request');
-        // form is submitted (any submit button pressed)
-        if ( $form->isSubmitted() && $form->isValid()) {
-            $stopwatch->start('check_exists');
-            $cancelButton = $form->get('cancel');
-            assert($cancelButton instanceof SubmitButton);
-
-            if ($cancelButton->isClicked()) {
-                $options['form']=$emptyForm;
-                return $this->render_site($options);
-            }
-
-            $orderDTO =$form->getData();
-            $order = $this->makeOrderFromDTO($orderDTO);
-            $existing = $this->already_ordered($order);
-
-
-            // if the costumer is not found, bail early
-            if ($order->getCostumer() === null) {
-                $this->addFlash('alert', new TranslatableMessage("Costumer not found"));
-                if (TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
-                // If the request comes from Turbo, set the content type as text/vnd.turbo-stream.html and only send the HTML to update
-                    $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
-                    return $this->renderBlock('components/Order_submit.html.twig', 'message_stream', ['form' => $emptyForm,]);
-                }
-                // $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
-                // return $this->renderBlock('components/Order_submit.html.twig', 'message_stream');
-                // $options['form']=$emptyDTO;
-                return $this->render('components/Order_submit.html.twig', $options, new TurboStreamResponse());
-                return $this->render_site($options);
-                // return $this->render('components/Form.html.twig', ['form'=>$form, 'messages'=>$form->getErrors()]);
-            }
-
-            $saveButton =$form->get('save');
-            assert($saveButton instanceof SubmitButton);
-
-            $updateButton =$form->get('update');
-            assert($updateButton instanceof SubmitButton);
-
-            // normal OK submit
-            if ($saveButton->isClicked()) {
-                // if already ordered show update dialog
-                if ($existing) {
-                    $options['override_form'] = true;
-                } else {
-                    
-                    //try saving, if error write in $options['alert']
-                    $this->save_order($order, $options);
-                }
-            } elseif ($updateButton->isClicked()) {
-                $existing->setOrderedItem($order->getOrderedItem());
-                $existing->setTax($order->getTax());
-                $existing->setOrderDateTime($order->getOrderDateTime());
-                $this->save_order($existing, $options);
-            }
-            $stopwatch->stop('check_exists');
-        }
-        
-        return $this->redirectToRoute('app_order', ['form'=>$form, 'messages'=>$form->getErrors()]);
-    }
-
-
-    #[Route('/', name: 'app_order')]
-    public function orderForm(Request $request, Stopwatch $stopwatch): Response
+    #[Route('/submit', name: 'submit_order', methods:['POST'])]
+    public function submitForm(Request $request, Stopwatch $stopwatch): Response
     {
         
         $stopwatch->start('init');
@@ -152,7 +75,7 @@ final class OrderController extends AbstractFOSRestController
         $orderDTO = new OrderFormDTO();
         $orderDTO->setTax(7);
         $form = $this->createForm(OrderDTOType::class, $orderDTO, [
-            // 'action' => $this->generateUrl('submit_order'),
+            // 'action' => $this->generateUrl('app_order'),
         ]);
         $emptyForm = clone $form;
 
@@ -187,11 +110,11 @@ final class OrderController extends AbstractFOSRestController
                     return $this->renderBlock('app_order', 'message_stream', ['form' => $emptyForm,]);
                 }
                 // $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
-                // $options['form']=$emptyDTO;
-                // $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
-                // return $this->render('components/Alert.html.twig', ['message'=>["users not found"]]);
-                return $this->render('components/Order_submit.html.twig', $options, new Response(null,422));
-                // return $this->render_site($options);
+                $options['form']=$emptyForm;
+                $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
+                return $this->renderBlock('components/Order_submit.html.twig', 'message_stream');
+                // return $this->render('components/Order_submit.html.twig', $options, new Response(null,422));
+                return $this->render_site($options);
                 // return $this->render('components/Form.html.twig', ['form'=>$form, 'messages'=>$form->getErrors()]);
             }
 
@@ -218,6 +141,97 @@ final class OrderController extends AbstractFOSRestController
                 $this->save_order($existing, $options);
             }
             $stopwatch->stop('check_exists');
+        }
+        
+        return $this->redirectToRoute('app_order');
+    }
+
+
+    #[Route('/', name: 'app_order', methods:['GET', 'POST'])]
+    public function orderForm(Request $request, Stopwatch $stopwatch): Response
+    {
+        
+        $stopwatch->start('init');
+        // creates a task object and initializes some data for this example
+        $orderDTO = new OrderFormDTO();
+        $orderDTO->setTax(7);
+        $form = $this->createForm(OrderDTOType::class, $orderDTO, [
+            'action' => $this->generateUrl('app_order'),
+        ]);
+        $emptyForm = clone $form;
+
+        $options = ['form' =>$form,  'override_form' => null];
+        $stopwatch->stop('init');
+        $stopwatch->start('handle_request');
+        $form->handleRequest($request);
+        $stopwatch->stop('handle_request');
+        // form is submitted (any submit button pressed)
+        if ( $form->isSubmitted() && $form->isValid()) {
+            $stopwatch->start('check_exists');
+            $cancelButton = $form->get('cancel');
+            assert($cancelButton instanceof SubmitButton);
+
+            if ($cancelButton->isClicked()) {
+                $options['form']=$emptyForm;
+                return $this->render_site($options);
+            }
+
+            $orderDTO =$form->getData();
+            $order = $this->makeOrderFromDTO($orderDTO);
+            $existing = $this->already_ordered($order);
+
+
+            // if the costumer is not found, bail early
+            if ($order->getCostumer() === null) {
+                $this->addFlash('alert', new TranslatableMessage("Costumer not found"));
+                $options['form']=$emptyForm;
+                
+                if (TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
+                // If the request comes from Turbo, set the content type as text/vnd.turbo-stream.html and only send the HTML to update
+                // I'll have to figure out how to do that. currently getPreferredFormat is always html
+                    $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
+                    return $this->renderBlock('components/Order_submit.html.twig', 'message_stream');
+                } else {
+                    // as soon as I know how to set the format when submiting, revert this to render_site to work with blocked js
+                    $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
+                    return $this->renderBlock('components/Order_submit.html.twig', 'message_stream');
+                    return $this->render_site($options);
+                }
+            }
+
+            $saveButton =$form->get('save');
+            assert($saveButton instanceof SubmitButton);
+
+            $updateButton =$form->get('update');
+            assert($updateButton instanceof SubmitButton);
+
+            // normal OK submit
+            if ($saveButton->isClicked()) {
+                // if already ordered show update dialog
+                if ($existing) {
+                    $options['override_form'] = true;
+                } else {
+                    
+                    //try saving, if error write in $options['alert']
+                    $this->save_order($order, $options);
+                    if (TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
+                    // If the request comes from Turbo, set the content type as text/vnd.turbo-stream.html and only send the HTML to update
+                        $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
+                        return $this->renderBlock('components/Order_submit.html.twig', 'message_stream', ['form' => $emptyForm,]);
+                    } else {
+                        $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
+                        return $this->renderBlock('components/Order_submit.html.twig', 'message_stream');
+                        return $this->render_site($options);
+                    }
+                }
+            } elseif ($updateButton->isClicked()) {
+                $existing->setOrderedItem($order->getOrderedItem());
+                $existing->setTax($order->getTax());
+                $existing->setOrderDateTime($order->getOrderDateTime());
+                $this->save_order($existing, $options);
+            }
+            $stopwatch->stop('check_exists');
+            
         }
         
         return $this->render_site($options);
