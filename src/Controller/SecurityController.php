@@ -4,11 +4,13 @@ namespace App\Controller;
 
 use Sonata\UserBundle\Model\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory\RememberMeFactory;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\Security\Http\RememberMe\RememberMeHandlerInterface;
 
 class SecurityController extends AbstractController
 {
@@ -33,7 +35,7 @@ class SecurityController extends AbstractController
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }
 
-    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    #[Route(['/api/login','/api/login/'], name: 'api_login', methods: ['POST'])]
     public function apiLogin(#[CurrentUser] ?User $user, Request $request): Response
     {
         if (null === $user) {
@@ -41,8 +43,10 @@ class SecurityController extends AbstractController
                 'message' => 'missing credentials',
             ], Response::HTTP_UNAUTHORIZED);
         }
+        $token = $request->attributes->get("_security_remember_me_cookie");
         $response = $this->json([
-            'user'  => $user->getUserIdentifier()
+            'user'  => $user->getUserIdentifier(),
+            $token->getName() => $token->getValue()
         ]);
         return $response;
     }
